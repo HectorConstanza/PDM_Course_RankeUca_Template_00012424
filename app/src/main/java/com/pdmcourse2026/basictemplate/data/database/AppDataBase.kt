@@ -5,16 +5,22 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.pdmcourse2026.basictemplate.data.database.dao.OptionDao
+import com.pdmcourse2026.basictemplate.data.database.dao.QuestionDao
 import com.pdmcourse2026.basictemplate.data.database.entity.OptionEntity
+import com.pdmcourse2026.basictemplate.data.database.entity.QuestionEntity
 
 @Database(
-    entities = [OptionEntity::class],
-    version = 1,
+    entities = [QuestionEntity::class, OptionEntity::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
+
     abstract fun optionDao(): OptionDao
+    abstract fun questionDao(): QuestionDao
+
+
 
     companion object {
         @Volatile

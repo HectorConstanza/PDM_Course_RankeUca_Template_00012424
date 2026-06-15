@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.pdmcourse2026.basictemplate.screens.home.HomeScreen
 import com.pdmcourse2026.basictemplate.screens.option.OptionsScreen
+import com.pdmcourse2026.basictemplate.screens.question.QuestionScreen
 
 @Composable
 fun RankeUCA_App() {
@@ -16,11 +17,22 @@ fun RankeUCA_App() {
     onBack = { backStack.removeLastOrNull() },
     entryProvider = entryProvider {
       entry<Routes.Home> {
-        OptionsScreen()
+        HomeScreen(
+          onAdminClick = { backStack.add(Routes.Questions) }
+        )
+      }
+      entry<Routes.Questions> {
+        QuestionScreen(
+          onQuestionClick = { id -> backStack.add(Routes.Options(id)) },
+          onBack = { backStack.removeLastOrNull() }
+        )
+      }
+      entry<Routes.Options> { route ->
+        OptionsScreen(
+          questionId = route.questionId,
+          onBack = { backStack.removeLastOrNull() }
+        )
       }
     },
   )
-
-
 }
-

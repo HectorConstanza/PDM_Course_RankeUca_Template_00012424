@@ -1,10 +1,11 @@
-package com.pdmcourse2026.basictemplate.screens.option
+package com.pdmcourse2026.basictemplate.screens.question
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -44,21 +45,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OptionsScreen(
-    questionId: Int,
+fun QuestionScreen(
+    onQuestionClick: (Int) -> Unit,
     onBack: () -> Unit,
-    viewModel: OptionsViewModel = viewModel(
-        factory = OptionsViewModel.provideFactory(questionId)
-    )
+    viewModel: QuestionViewModel = viewModel(factory = QuestionViewModel.Factory)
 ) {
-    val options by viewModel.options.collectAsStateWithLifecycle()
-    var showSheet by rememberSaveable { mutableStateOf(value = false) }
+    val questions by viewModel.questions.collectAsStateWithLifecycle()
+    var showSheet by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         topBar = {
             TopAppBar(
-                title = { Text("Administrar opciones") },
+                title = { Text("Preguntas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -69,9 +68,9 @@ fun OptionsScreen(
                 },
                 actions = {
                     TextButton(onClick = { showSheet = true }) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Nueva opción")
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Nueva pregunta")
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Nuevo")
+                        Text("Nueva")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -86,8 +85,7 @@ fun OptionsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-
-            if (options.isEmpty()) {
+            if (questions.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -101,11 +99,11 @@ fun OptionsScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Todavía no hay opciones",
+                        text = "Todavía no hay preguntas",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = "Toca Nuevo para crear la primera.",
+                        text = "Toca Nueva para crear la primera.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -116,27 +114,29 @@ fun OptionsScreen(
                     contentPadding = PaddingValues(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(items = options, key = { it.id }) { option ->
-                        ElevatedCard {
+                    items(items = questions, key = { it.id }) { question ->
+                        ElevatedCard(
+                            onClick = { onQuestionClick(question.id) }
+                        ) {
                             ListItem(
                                 headlineContent = {
                                     Text(
-                                        text = option.name,
+                                        text = question.title,
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                 },
                                 supportingContent = {
                                     Text(
-                                        text = option.imageUrl,
+                                        text = "${question.optionCount} opciones",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
                                 trailingContent = {
-                                    IconButton(onClick = { viewModel.deleteOption(option) }) {
+                                    IconButton(onClick = { viewModel.deleteQuestion(question) }) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "Borrar ${option.name}",
+                                            contentDescription = "Borrar ${question.title}",
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -150,11 +150,59 @@ fun OptionsScreen(
     }
 
     if (showSheet) {
-        OptionBottomSheet(
-            onSave = { name, imageUrl ->
-                viewModel.addOption(name, imageUrl)
+        QuestionBottomSheet(
+            onSave = { title ->
+                viewModel.addQuestion(title)
                 showSheet = false
+            },
+            onDismiss = { showSheet = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuestionBottomSheet(
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    var title by remember { mutableStateOf("") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = "Nueva Pregunta",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Título de la pregunta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onSave(title.trim())
+                    }
+                },
+                modifier = Modifier.align(Alignment.End),
+                enabled = title.isNotBlank()
+            ) {
+                Text("Guardar")
             }
-        ) { showSheet = false }
+        }
     }
 }

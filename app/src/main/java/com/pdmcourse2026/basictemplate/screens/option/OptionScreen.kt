@@ -1,149 +1,91 @@
 package com.pdmcourse2026.basictemplate.screens.option
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import com.pdmcourse2026.basictemplate.data.model.Option
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OptionsScreen(
     questionId: Int,
     onBack: () -> Unit,
-    viewModel: OptionsViewModel = viewModel(
+    vm: OptionsViewModel = viewModel(
+        key = "options_$questionId",
         factory = OptionsViewModel.provideFactory(questionId)
     )
 ) {
-    val options by viewModel.options.collectAsStateWithLifecycle()
-    var showSheet by rememberSaveable { mutableStateOf(value = false) }
+    val options by vm.options.collectAsStateWithLifecycle()
+    val error by vm.error.collectAsStateWithLifecycle()
+    var editingOption by remember { mutableStateOf<Option?>(null) }
+    var showSheet by rememberSaveable { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(it)
+            vm.clearError()
+        }
+    }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Administrar opciones") },
+                title = { Text("Opciones") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás")
                     }
                 },
                 actions = {
-                    TextButton(onClick = { showSheet = true }) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Nueva opción")
-                        Spacer(modifier = Modifier.width(4.dp))
+                    TextButton(onClick = { 
+                        editingOption = null
+                        showSheet = true 
+                    }) {
+                        Icon(Icons.Default.Add, null)
                         Text("Nuevo")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                )
+                }
             )
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-
-            if (options.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Inbox,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.height(36.dp)
+    ) { pad ->
+        if (options.isEmpty()) {
+            EmptyState(Modifier.padding(pad))
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(pad).fillMaxSize()
+            ) {
+                items(options, key = { it.id }) { opt ->
+                    OptionCard(
+                        opt = opt,
+                        onEdit = {
+                            editingOption = opt
+                            showSheet = true
+                        },
+                        onDelete = { vm.deleteOption(opt) }
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Todavía no hay opciones",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Toca Nuevo para crear la primera.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(items = options, key = { it.id }) { option ->
-                        ElevatedCard {
-                            ListItem(
-                                headlineContent = {
-                                    Text(
-                                        text = option.name,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                },
-                                supportingContent = {
-                                    Text(
-                                        text = option.imageUrl,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailingContent = {
-                                    IconButton(onClick = { viewModel.deleteOption(option) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Borrar ${option.name}",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -151,10 +93,60 @@ fun OptionsScreen(
 
     if (showSheet) {
         OptionBottomSheet(
-            onSave = { name, imageUrl ->
-                viewModel.addOption(name, imageUrl)
+            option = editingOption,
+            onSave = { value, _ -> 
+                editingOption?.let { vm.updateOption(it.id, value) } ?: vm.addOption(value)
                 showSheet = false
+            },
+            onDismiss = { showSheet = false }
+        )
+    }
+}
+
+@Composable
+private fun OptionCard(opt: Option, onEdit: () -> Unit, onDelete: () -> Unit) {
+    ElevatedCard {
+        ListItem(
+            headlineContent = { Text(opt.name) },
+            supportingContent = {
+                Column {
+                    Text("Votos: ${opt.votes}", style = MaterialTheme.typography.bodyMedium)
+                    opt.imageUrl?.let { Text(it, maxLines = 1, style = MaterialTheme.typography.bodySmall) }
+                }
+            },
+            leadingContent = {
+                opt.imageUrl?.let {
+                    AsyncImage(
+                        model = it,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            },
+            trailingContent = {
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, "Borrar", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
-        ) { showSheet = false }
+        )
+    }
+}
+
+@Composable
+private fun EmptyState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(Icons.Default.Inbox, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline)
+        Spacer(Modifier.height(12.dp))
+        Text("No hay opciones todavía", style = MaterialTheme.typography.titleMedium)
     }
 }

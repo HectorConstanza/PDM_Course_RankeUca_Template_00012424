@@ -22,8 +22,9 @@ data class OptionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String,
-    val imageUrl: String,
+    val imageUrl: String? = null,
     val questionId: Int,
+    val votes: Int = 0,
 )
 
 fun OptionEntity.toModel(): Option {
@@ -32,8 +33,8 @@ fun OptionEntity.toModel(): Option {
         name = name,
         imageUrl = imageUrl,
         questionId = questionId,
-
-        )
+        votes = votes,
+    )
 }
 
 fun Option.toEntity(): OptionEntity {
@@ -42,6 +43,6 @@ fun Option.toEntity(): OptionEntity {
         name = name,
         imageUrl = imageUrl,
         questionId = questionId,
-
+        votes = votes,
     )
 }

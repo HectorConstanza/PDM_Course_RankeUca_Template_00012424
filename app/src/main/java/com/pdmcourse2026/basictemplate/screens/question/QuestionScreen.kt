@@ -1,144 +1,107 @@
 package com.pdmcourse2026.basictemplate.screens.question
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pdmcourse2026.basictemplate.data.model.Question
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionScreen(
     onQuestionClick: (Int) -> Unit,
     onBack: () -> Unit,
-    viewModel: QuestionViewModel = viewModel(factory = QuestionViewModel.Factory)
+    vm: QuestionViewModel = viewModel(factory = QuestionViewModel.Factory)
 ) {
-    val questions by viewModel.questions.collectAsStateWithLifecycle()
+    val questions by vm.questions.collectAsStateWithLifecycle()
+    val isRefreshing by vm.isRefreshing.collectAsStateWithLifecycle()
+    val error by vm.error.collectAsStateWithLifecycle()
+    var editingQuestion by remember { mutableStateOf<Question?>(null) }
     var showSheet by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         topBar = {
             TopAppBar(
                 title = { Text("Preguntas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Atrás")
                     }
                 },
                 actions = {
-                    TextButton(onClick = { showSheet = true }) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Nueva pregunta")
-                        Spacer(modifier = Modifier.width(4.dp))
+                    TextButton(onClick = { 
+                        editingQuestion = null
+                        showSheet = true 
+                    }) {
+                        Icon(Icons.Default.Add, null)
                         Text("Nueva")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                )
+                }
             )
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) { pad ->
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { vm.refresh() },
+            modifier = Modifier.padding(pad).fillMaxSize()
         ) {
-            if (questions.isEmpty()) {
+            if (error != null) {
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Inbox,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.height(36.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Todavía no hay preguntas",
-                        style = MaterialTheme.typography.titleMedium
+                        text = error!!,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge
                     )
-                    Text(
-                        text = "Toca Nueva para crear la primera.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { vm.refresh() }) {
+                        Text("Reintentar")
+                    }
+                }
+            } else if (questions.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay preguntas todavía")
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    items(items = questions, key = { it.id }) { question ->
-                        ElevatedCard(
-                            onClick = { onQuestionClick(question.id) }
-                        ) {
+                    items(questions, key = { it.id }) { q ->
+                        ElevatedCard(onClick = { onQuestionClick(q.id) }) {
                             ListItem(
-                                headlineContent = {
-                                    Text(
-                                        text = question.title,
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                },
-                                supportingContent = {
-                                    Text(
-                                        text = "${question.optionCount} opciones",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
+                                headlineContent = { Text(q.title) },
+                                supportingContent = { Text("${q.optionCount} opciones") },
                                 trailingContent = {
-                                    IconButton(onClick = { viewModel.deleteQuestion(question) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Borrar ${question.title}",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                                    Row {
+                                        IconButton(onClick = { 
+                                            editingQuestion = q
+                                            showSheet = true
+                                        }) {
+                                            Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
+                                        }
+                                        IconButton(onClick = { vm.deleteQuestion(q) }) {
+                                            Icon(Icons.Default.Delete, "Borrar", tint = MaterialTheme.colorScheme.error)
+                                        }
                                     }
                                 }
                             )
@@ -151,8 +114,9 @@ fun QuestionScreen(
 
     if (showSheet) {
         QuestionBottomSheet(
+            question = editingQuestion,
             onSave = { title ->
-                viewModel.addQuestion(title)
+                editingQuestion?.let { vm.updateQuestion(it.id, title) } ?: vm.addQuestion(title)
                 showSheet = false
             },
             onDismiss = { showSheet = false }
@@ -163,42 +127,29 @@ fun QuestionScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuestionBottomSheet(
+    question: Question?,
     onSave: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(question?.title ?: "") }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .padding(bottom = 32.dp)
-                .fillMaxWidth()
-        ) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(16.dp).padding(bottom = 32.dp).fillMaxWidth()) {
             Text(
-                text = "Nueva Pregunta",
+                text = if (question == null) "Nueva Pregunta" else "Editar Pregunta",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Título de la pregunta") },
+                label = { Text("Título") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = {
-                    if (title.isNotBlank()) {
-                        onSave(title.trim())
-                    }
-                },
-                modifier = Modifier.align(Alignment.End),
+                onClick = { onSave(title.trim()) },
+                modifier = Modifier.align(Alignment.End).padding(top = 16.dp),
                 enabled = title.isNotBlank()
             ) {
                 Text("Guardar")

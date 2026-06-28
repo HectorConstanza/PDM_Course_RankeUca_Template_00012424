@@ -17,6 +17,15 @@ interface OptionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOption(option: OptionEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOptions(options: List<OptionEntity>)
+
     @Delete
     suspend fun deleteOption(option: OptionEntity)
+
+    @Query("DELETE FROM options WHERE id = :id")
+    suspend fun deleteOptionById(id: Int)
+
+    @Query("DELETE FROM options WHERE id NOT IN (:ids)")
+    suspend fun deleteOptionsNotIn(ids: List<Int>)
 }

@@ -31,7 +31,8 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    //buildConfigField("String", "API_TOKEN", "\"$apiToken\"")
+    val apiKey = localProperties.getProperty("RANK_UCA_API_KEY") ?: ""
+    buildConfigField("String", "RANK_UCA_API_KEY", "\"$apiKey\"")
   }
 
   buildTypes {

@@ -20,6 +20,15 @@ interface QuestionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuestion(question: QuestionEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertQuestions(questions: List<QuestionEntity>)
+
     @Delete
     suspend fun deleteQuestion(question: QuestionEntity)
+
+    @Query("DELETE FROM questions WHERE id = :id")
+    suspend fun deleteQuestionById(id: Int)
+
+    @Query("DELETE FROM questions WHERE id NOT IN (:ids)")
+    suspend fun deleteQuestionsNotIn(ids: List<Int>)
 }

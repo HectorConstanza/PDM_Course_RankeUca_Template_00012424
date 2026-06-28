@@ -11,8 +11,8 @@ import com.pdmcourse2026.basictemplate.data.database.entity.QuestionEntity
 
 @Database(
     entities = [QuestionEntity::class, OptionEntity::class],
-    version = 2,
-    exportSchema = false
+    version = 4,
+    exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -31,9 +31,9 @@ abstract class AppDatabase : RoomDatabase() {
                 Room.databaseBuilder(
                     context = context.applicationContext,
                     klass = AppDatabase::class.java,
-                    name = "rankeuca_database"
+                    name = "rankeuca_database",
                 )
-                    .fallbackToDestructiveMigration(false)
+                    .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                     .also { INSTANCE = it }
             }

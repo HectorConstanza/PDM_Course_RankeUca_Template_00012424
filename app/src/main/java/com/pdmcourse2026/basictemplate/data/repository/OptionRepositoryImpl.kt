@@ -17,7 +17,7 @@ class OptionRepositoryImpl(
         }
     }
 
-    override suspend fun addOption(name: String, imageUrl: String, questionId: Int) {
+    override suspend fun addOption(name: String, imageUrl: String?, questionId: Int) {
         val option = Option(name = name, imageUrl = imageUrl, questionId = questionId)
         optionDao.insertOption(option.toEntity())
     }

@@ -21,11 +21,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.pdmcourse2026.basictemplate.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onAdminClick: () -> Unit
+    onAdminClick: () -> Unit,
+    onMassVoteClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -57,11 +59,10 @@ fun HomeScreen(
             )
 
             MenuCard(
-                title = "Votar",
-                subtitle = "Próximamente",
+                title = "Voto masivo",
+                subtitle = "Vota todas las preguntas a la vez",
                 icon = Icons.Default.BarChart,
-                onClick = {},
-                enabled = false
+                onClick = onMassVoteClick
             )
         }
     }

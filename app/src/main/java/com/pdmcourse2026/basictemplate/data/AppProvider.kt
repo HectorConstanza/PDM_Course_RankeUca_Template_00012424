@@ -3,6 +3,8 @@ package com.pdmcourse2026.basictemplate.data
 import android.content.Context
 import com.pdmcourse2026.basictemplate.data.api.RankeUcaApi
 import com.pdmcourse2026.basictemplate.data.database.AppDatabase
+import com.pdmcourse2026.basictemplate.data.repository.MassVoteRepository
+import com.pdmcourse2026.basictemplate.data.repository.MassVoteRepositoryImpl
 import com.pdmcourse2026.basictemplate.data.repository.QuestionOfflineFirstRepository
 import com.pdmcourse2026.basictemplate.data.repository.QuestionOfflineFirstRepositoryImpl
 
@@ -17,5 +19,9 @@ class AppProvider(context: Context) {
     private val repository: QuestionOfflineFirstRepository =
         QuestionOfflineFirstRepositoryImpl(questionDao, optionDao, api)
 
+    private val massVoteRepository: MassVoteRepository =
+        MassVoteRepositoryImpl(questionDao, api)
+
     fun provideRepository(): QuestionOfflineFirstRepository = repository
+    fun provideMassVoteRepository(): MassVoteRepository = massVoteRepository
 }

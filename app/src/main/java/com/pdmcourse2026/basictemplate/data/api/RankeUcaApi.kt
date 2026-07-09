@@ -102,4 +102,8 @@ class RankeUcaApi(private val baseUrl: String = "https://qjcxdvfzyseuvezacxsd.su
     suspend fun deleteOption(id: Int) {
         client.delete("$baseUrl/options/$id") { apiConfig() }
     }
+
+    suspend fun vote(optionId: Int) {
+        client.post("$baseUrl/parcialtres/votes") { apiConfig() }
+    }
 }
